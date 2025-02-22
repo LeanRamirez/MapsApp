@@ -5,6 +5,8 @@ import React from 'react';
 import {NavigationContainer} from '@react-navigation/native';
 import {StackNavigator} from './presentation/navigation/StackNavigator';
 import PermissionsChecker from './presentation/providers/PermissionsChecker';
+// import {enableLatestRenderer} from 'react-native-maps';
+// enableLatestRenderer();
 
 export default function MapsApp() {
   return (

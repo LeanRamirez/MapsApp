@@ -3,7 +3,7 @@ import React from 'react';
 import {GlobalStyles} from '../../../config/theme/GlobalStyles';
 import {usePermissionStore} from '../../store/permissions/usePermissionStore';
 
-export default function PermissionsScreen() {
+export const PermissionsScreen = () => {
   const {locationStatus, requestLocationPermission} = usePermissionStore();
 
   return (
@@ -19,4 +19,4 @@ export default function PermissionsScreen() {
       <Text style={{color: 'black'}}>Estado actual: {locationStatus}</Text>
     </View>
   );
-}
+};
