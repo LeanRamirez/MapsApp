@@ -6,8 +6,8 @@ export const GetCurrentLocation = async (): Promise<Location> => {
     Geolocation.getCurrentPosition(
       info => {
         resolve({
-          latitud: info.coords.latitude,
-          longitud: info.coords.longitude,
+          latitude: info.coords.latitude,
+          longitude: info.coords.longitude,
         });
       },
       error => {
@@ -19,4 +19,26 @@ export const GetCurrentLocation = async (): Promise<Location> => {
       },
     );
   });
+};
+
+export const watchCurrentLocation = (
+  locationCallback: (location: Location) => void,
+): number => {
+  return Geolocation.watchPosition(
+    info =>
+      locationCallback({
+        latitude: info.coords.latitude,
+        longitude: info.coords.longitude,
+      }),
+    error => {
+      throw new Error(`can't get watchPosition`);
+    },
+    {
+      enableHighAccuracy: true,
+    },
+  );
+};
+
+export const clearWatchLocation = (watchId: number) => {
+  Geolocation.clearWatch(watchId);
 };

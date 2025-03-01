@@ -1,7 +1,9 @@
 import {Platform} from 'react-native';
-import MapView, {Marker, PROVIDER_GOOGLE} from 'react-native-maps';
+import MapView, {Marker, Polyline, PROVIDER_GOOGLE} from 'react-native-maps';
 import {Location} from '../../../infrastructure/intefaces/location';
 import {FAB} from '../ui/FAB';
+import {useRef, useEffect, useState} from 'react';
+import {UseLocationStore} from '../../store/location/UseLocationStore';
 
 interface Props {
   showsUserLocation?: boolean;
@@ -9,31 +11,101 @@ interface Props {
 }
 
 export const Map = ({showsUserLocation = true, initialLocation}: Props) => {
+  const mapRef = useRef<MapView | null>(null);
+  const {
+    getLocation,
+    lastKnowLocation,
+    watchLocation,
+    clearWatchLocation,
+    userLocationsList,
+  } = UseLocationStore();
+  const [isFollowingUser, setIsFollowingUser] = useState(true);
+  const [isShowingPolyline, setIsShowingPolyline] = useState(true);
+
+  const moveCameraToLocation = (location: Location) => {
+    if (!mapRef.current) return;
+    mapRef.current.animateCamera({
+      center: location,
+    });
+  };
+
+  const moveToCurrentLocation = async () => {
+    if (!lastKnowLocation) {
+      moveCameraToLocation(initialLocation);
+    }
+    const location = await getLocation();
+    if (!location) return;
+    moveCameraToLocation(location);
+  };
+
+  useEffect(() => {
+    watchLocation();
+    return () => {
+      clearWatchLocation();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (lastKnowLocation && isFollowingUser) {
+      moveCameraToLocation(lastKnowLocation);
+    }
+  }, [lastKnowLocation, isFollowingUser]);
+
   return (
     <>
       <MapView
+        ref={map => {
+          if (map) {
+            mapRef.current = map;
+          }
+        }}
         showsUserLocation={showsUserLocation}
-        provider={Platform.OS === 'ios' ? undefined : PROVIDER_GOOGLE} // remove if not using Google Maps
+        provider={Platform.OS === 'ios' ? undefined : PROVIDER_GOOGLE}
         style={{flex: 1}}
-        region={{
-          latitude: initialLocation.latitud,
-          longitude: initialLocation.longitud,
+        onTouchStart={() => setIsFollowingUser(false)}
+        initialRegion={{
+          latitude: initialLocation.latitude,
+          longitude: initialLocation.longitude,
           latitudeDelta: 0.015,
           longitudeDelta: 0.0121,
         }}>
         <Marker
           coordinate={{
-            latitude: 37.78825,
-            longitude: -122.4324,
+            latitude: initialLocation.latitude,
+            longitude: initialLocation.longitude,
           }}
-          title="Este es el titulo del marcador"
-          description="Este es el cuerpo del marcador"
+          title="Ubicación predeterminada"
+          description="Este es el marcador inicial"
         />
+
+        {isShowingPolyline && (
+          <Polyline
+            coordinates={userLocationsList}
+            strokeColor="black"
+            strokeWidth={5}
+          />
+        )}
       </MapView>
 
       <FAB
+        iconName={isShowingPolyline ? 'eye-outline' : 'eye-off-outline'}
+        onPress={() => setIsShowingPolyline(!isShowingPolyline)}
+        style={{
+          bottom: 140,
+          right: 20,
+        }}
+      />
+      <FAB
+        iconName={isFollowingUser ? 'walk-outline' : 'accessibility-outline'}
+        onPress={() => setIsFollowingUser(!isFollowingUser)}
+        style={{
+          bottom: 80,
+          right: 20,
+        }}
+      />
+      <FAB
         iconName="compass-outline"
-        onPress={() => console.log('hola')}
+        onPress={moveToCurrentLocation}
         style={{
           bottom: 20,
           right: 20,
